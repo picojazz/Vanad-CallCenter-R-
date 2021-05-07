@@ -37,12 +37,12 @@ names(lHS)<-c('HH','MM','SS')
 
 
 #split la date
-dtDate=as.character(dtparts$laDate)
-lDate=t(as.data.frame(strsplit(dtDate, '-')))   
-row.names(lDate)=NULL
-lDate=as.data.frame(lDate)
-names(lDate)<-c('ANNEE','MOIS','JOUR')
-#print(head(lDate))
+# dtDate=as.character(dtparts$laDate)
+# lDate=t(as.data.frame(strsplit(dtDate, '-')))   
+# row.names(lDate)=NULL
+# lDate=as.data.frame(lDate)
+# names(lDate)<-c('ANNEE','MOIS','JOUR')
+# #print(head(lDate))
 
 dtCall = cbind(dtparts$laDate,lHS)
 row.names(dtCall)=NULL
@@ -79,9 +79,9 @@ for(i in 1:length(heure)){
     row <- dt[j,]
     
     indice = as.integer(row$MM)/30
-    if(indice < 1){
+    if(indice < 1 && indice >0){
       periode1 = periode1 + 1
-    }else{
+    }else if(indice > 1){
       periode2 = periode2 + 1
     }
     
@@ -97,7 +97,7 @@ for(i in 1:length(heure)){
       
       #on prend la nouvelle date
       date1 = row$DATE
-      print(date1)
+      #print(date1)
       
     }
     
@@ -108,9 +108,44 @@ for(i in 1:length(heure)){
 }
 row.names(dtSum)=NULL
 dtSum=as.data.frame(dtSum)
-names(dtSum)<-c('date','heure','periode','totAppel')
+names(dtSum)<-c('date','HH','periode','totAppel')
 
-print(dtSum)
+print(head(dtSum))
+
+p <- c(1,2)
+dtTauxPeriode <- c()
+
+
+for(i in 1:length(heure)){
+  
+  for(j in p){
+    
+    dtp <- subset(dtSum,HH == heure[i] & periode == j)
+    #print(head(dtp))
+    totappel <- sum(as.numeric(dtp$totAppel))
+    numLine = nrow(dtp)
+    taux = totappel / numLine
+    if(j == 1){
+      dtTauxPeriode <- rbind(dtTauxPeriode,c(paste(heure[i],"H 00"),taux))
+    }else{
+      dtTauxPeriode <- rbind(dtTauxPeriode,c(paste(heure[i],"H 30"),taux))
+    }
+    
+    
+    
+  }
+  
+}
+
+#dtTauxPeriode <- cbind(dtTauxPeriode,c(1:24))
+
+row.names(dtTauxPeriode)=NULL
+dtTauxPeriode=as.data.frame(dtTauxPeriode)
+names(dtTauxPeriode)<-c('HH','taux')
+print(dtTauxPeriode)
+
+plot(dtTauxPeriode$taux ,xaxt = 'n', main="taux d'arrivee", type="b", xlab = "Periode", ylab = "Taux ")
+axis(1,at = 1:24 ,labels=dtTauxPeriode$HH)
 
 #print(sum(as.numeric(dtSum$totAppel)))
 #}
