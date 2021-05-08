@@ -6,7 +6,7 @@ setwd(path)#place le curseur de lecture de fichiers au chemin pr√©c√©dent
 
 
 
-#nombre_dappel_periode_mois <- function(fichier) {
+
 
 dataframe1=read.table("calls-2014-02.csv", sep=",", dec=".", header=TRUE)
 df1<-na.omit(dataframe1)
@@ -36,29 +36,28 @@ names(lHS)<-c('HH','MM','SS')
 #print(head(lHS))
 
 
-#split la date
-# dtDate=as.character(dtparts$laDate)
-# lDate=t(as.data.frame(strsplit(dtDate, '-')))   
-# row.names(lDate)=NULL
-# lDate=as.data.frame(lDate)
-# names(lDate)<-c('ANNEE','MOIS','JOUR')
-# #print(head(lDate))
+
 
 dtCall = cbind(dtparts$laDate,lHS)
+dtType=as.character(df1$queue_name)
+dtCall = cbind(dtCall,dtType)
+
 row.names(dtCall)=NULL
 dtCall=as.data.frame(dtCall)
-names(dtCall)<-c('DATE','HH','MM','SS')
+names(dtCall)<-c('DATE','HH','MM','SS','TYPE')
 print(head(dtCall)) #jeu de donnee formatter 2017-02-01 08 05 22
 
 
 
 
+#list des types d'appel   NB: on 1 seul enregistrement pour 30178
+listType = unique(dtCall$TYPE)
+print(listType)   
 
 
 
 
-
-
+tauxParType = function(dtCall,type){
 
 heure <- c("08","09","10","11","12","13","14","15","16","17","18","19")
 dtSum <- c()
@@ -68,10 +67,17 @@ for(i in 1:length(heure)){
 
   periode1 = 0
   periode2 = 0
-
+  
+  
   dt <- subset(dtCall,HH == heure[i]) #recup tous les donnÈe de l'heure i'
+  
+  if(nrow(dt)==0){
+    next
+  }
+  
   #print(head(dt))
   date1 = dtCall$DATE[1]  #date de la 1er ligne
+  tempDate = dtCall$DATE[1]
   #print(date1)
   
   for(j in 1:nrow(dt)){
@@ -91,7 +97,7 @@ for(i in 1:length(heure)){
       
       dtSum <- rbind(dtSum,c(date1,heure[i],1,periode1))
       dtSum <- rbind(dtSum,c(date1,heure[i],2,periode2))
-      #on remet les compteur a 0
+      #on remet les compteurs a 0
       periode1 = 0
       periode2 = 0
       
@@ -101,17 +107,23 @@ for(i in 1:length(heure)){
       
     }
     
+    
   }
   
- 
+  #verifier si la date n'a pas changÈ on ecrit le nombre dappel sur la periode a cette date vu qu'il n'est pas entrÈ dans le IF
+  if(date1 == tempDate){
+    dtSum <- rbind(dtSum,c(date1,heure[i],1,periode1))
+    dtSum <- rbind(dtSum,c(date1,heure[i],2,periode2))
+  }
   
 
 }
 row.names(dtSum)=NULL
 dtSum=as.data.frame(dtSum)
+#print(head(dtSum))
 names(dtSum)<-c('date','HH','periode','totAppel')
 
-print(head(dtSum))
+#print(head(dtSum))
 
 p <- c(1,2)
 dtTauxPeriode <- c()
@@ -143,13 +155,32 @@ for(i in 1:length(heure)){
 row.names(dtTauxPeriode)=NULL
 dtTauxPeriode=as.data.frame(dtTauxPeriode)
 names(dtTauxPeriode)<-c('HH','taux')
-print(dtTauxPeriode)
+#print(dtTauxPeriode)
 
-plot(dtTauxPeriode$taux ,xaxt = 'n', main="taux d'arrivee", type="b", xlab = "Periode", ylab = "Taux moyen d'arrivee")
+plot(dtTauxPeriode$taux ,xaxt = 'n', main=paste("taux moyen d'arrivee",type,sep = " "), type="b", xlab = "Periode", ylab = "Taux moyen d'arrivee")
 axis(1,at = 1:24 ,labels=dtTauxPeriode$HH)
 
-print(sum(as.numeric(dtSum$totAppel)))
-#}
+}
+
+
+
+
+
+par(mfcol = c(4,4))
+for(i in 1:length(listType)){
+
+  dtt <- subset(dtCall,TYPE == listType[i] )
+  tauxParType(dtCall = dtt,type = listType[i])
+
+}
+
+
+
+
+
+
+
+
 
 
 
